@@ -6,14 +6,39 @@ export type SettingsValidationError = {
   message: string;
 };
 
-const WS_URL_RE = /^wss?:\/\/[^\s]+$/i;
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
+
+/**
+ * Returns true iff `input` is a syntactically valid `ws:` / `wss:` URL whose
+ * host resolves *literally* to a loopback address. The wsUrl ends up as
+ * `new WebSocket(url)` in the background SW; the threat model treats the
+ * destination as untrusted (it can be rerouted via chrome.storage.sync
+ * tampering). Pinning to `127.0.0.1 | localhost | ::1` keeps user-selected
+ * text — which is sent verbatim in JSON-RPC `turn/start` — on the local box.
+ */
+export function isLoopbackWsUrl(input: unknown): input is string {
+  if (typeof input !== "string") return false;
+  let parsed: URL;
+  try {
+    parsed = new URL(input);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "ws:" && parsed.protocol !== "wss:") return false;
+  // URL.hostname returns IPv6 hosts wrapped in brackets — strip them.
+  const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  return LOOPBACK_HOSTS.has(host);
+}
 
 export function validateSettings(input: Partial<Settings>): SettingsValidationError[] {
   const errors: SettingsValidationError[] = [];
 
   if (input.wsUrl !== undefined) {
-    if (typeof input.wsUrl !== "string" || !WS_URL_RE.test(input.wsUrl)) {
-      errors.push({ field: "wsUrl", message: "wsUrl must start with ws:// or wss://" });
+    if (!isLoopbackWsUrl(input.wsUrl)) {
+      errors.push({
+        field: "wsUrl",
+        message: "wsUrl must be a ws:// or wss:// URL pointing to localhost / 127.0.0.1 / ::1",
+      });
     }
   }
 
@@ -52,7 +77,9 @@ function coerce(stored: unknown): Settings {
   if (typeof stored !== "object" || stored === null) return merged;
   const obj = stored as Partial<Record<keyof Settings, unknown>>;
 
-  if (typeof obj.wsUrl === "string") merged.wsUrl = obj.wsUrl;
+  // Reject sync-tampered non-loopback URLs at load time as well — the source
+  // of truth for the security boundary is here, not the options form.
+  if (isLoopbackWsUrl(obj.wsUrl)) merged.wsUrl = obj.wsUrl;
   if (typeof obj.model === "string") merged.model = obj.model;
   if (typeof obj.targetLang === "string" && obj.targetLang.trim().length > 0) {
     merged.targetLang = obj.targetLang;

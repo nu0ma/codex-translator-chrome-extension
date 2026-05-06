@@ -1,0 +1,10 @@
+{
+  "tags": [
+    "node"
+  ],
+  "sentinels": [
+    "package.json"
+  ],
+  "detectedAt": "2026-05-06T11:00:43.472Z",
+  "rootPath": "/Users/ishikawaryoufutoshi/src/github.com/nu0ma/codex-translator-chrome-extension"
+}

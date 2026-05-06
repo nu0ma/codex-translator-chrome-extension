@@ -1,5 +1,6 @@
 import { CLIENT_INFO } from "../shared/constants.js";
 import { log } from "../shared/logger.js";
+import { isLoopbackWsUrl } from "../shared/settings.js";
 import type {
   ItemCompletedParams,
   ItemDeltaParams,
@@ -28,7 +29,17 @@ export interface WSLike {
 
 export type WebSocketFactory = (url: string) => WSLike;
 
-const defaultFactory: WebSocketFactory = (url) => new WebSocket(url) as unknown as WSLike;
+// Defense-in-depth: settings.validateSettings already enforces loopback, but
+// the factory is the last gate before the socket actually opens, so re-check
+// here. This catches sync-tampered values that somehow slipped past coerce().
+const defaultFactory: WebSocketFactory = (url) => {
+  if (!isLoopbackWsUrl(url)) {
+    throw new CodexError(
+      "Refusing to open WebSocket: URL is not a loopback target (127.0.0.1 / localhost / ::1).",
+    );
+  }
+  return new WebSocket(url) as unknown as WSLike;
+};
 
 // ---------- Public API ----------
 
@@ -312,9 +323,31 @@ export class CodexClient {
     if (this.#closed) return;
     this.#closed = true;
     const err = new CodexError(`WebSocket closed (code=${code} reason=${reason || "n/a"})`);
+
+    // Reject any in-flight JSON-RPC requests waiting on a response.
     const remaining = [...this.#pending.values()];
     this.#pending.clear();
     for (const p of remaining) p.reject(err);
+
+    // Surface the close to any in-flight `runTurn` by synthesizing a failed
+    // turn/completed notification. Without this, runTurn awaits its
+    // pendingResolve until `timeoutMs` (default 60s) before surfacing the
+    // failure — masking the real WS close reason and leaving the streaming
+    // card spinning. The synthetic event mirrors the shape produced by the
+    // failure-broadcast path in #notifyOrRequest.
+    const turnHandlers = this.#notificationHandlers.get("turn/completed");
+    if (turnHandlers && turnHandlers.size > 0) {
+      const synthetic = {
+        turn: { status: "failed", error: { message: err.message } },
+      };
+      for (const h of turnHandlers) {
+        try {
+          h(synthetic);
+        } catch (e) {
+          logger.error("synthetic turn/completed handler threw", e);
+        }
+      }
+    }
   }
 
   #send(payload: JsonRpcRequest | { jsonrpc: "2.0"; method: string; params?: unknown }): void {

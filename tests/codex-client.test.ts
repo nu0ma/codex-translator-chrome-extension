@@ -309,6 +309,42 @@ describe("CodexClient runTurn streaming", () => {
     client.close();
   });
 
+  it("fails the turn immediately when the WebSocket closes mid-turn", async () => {
+    const client = new CodexClient({
+      url: "ws://test",
+      timeoutMs: 60_000,
+      webSocketFactory: factory,
+    });
+    const connectPromise = client.connect();
+    await nextTick();
+    const ws = lastSocket!;
+    ws.open();
+    await nextTick();
+    ws.receive({ jsonrpc: "2.0", id: 1, result: {} });
+    await connectPromise;
+
+    const startPromise = client.startThread();
+    await nextTick();
+    ws.receive({
+      jsonrpc: "2.0",
+      id: ws.findSent("thread/start")!.id,
+      result: { thread: { id: "thr" } },
+    });
+    await startPromise;
+
+    const consume = (async () => {
+      for await (const _ of client.runTurn("text")) {
+        /* drain */
+      }
+    })();
+    await nextTick();
+    // Simulate the upstream proxy crashing mid-turn — no turn/completed
+    // notification will ever arrive over the wire.
+    ws.close(1006, "abnormal closure");
+    await expect(consume).rejects.toBeInstanceOf(CodexError);
+    client.close();
+  });
+
   it("times out when no turn/completed arrives", async () => {
     vi.useFakeTimers();
     try {
