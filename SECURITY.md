@@ -44,3 +44,23 @@ Out of scope:
 - Vulnerabilities in `codex-app-server` itself — please report those at <https://github.com/openai/codex>.
 - Vulnerabilities in third-party host pages where the extension renders translations.
 - Issues that require physical access to the user's machine.
+
+## Repository Posture
+
+Audited with [`microsoft/ghqr`](https://github.com/microsoft/ghqr). Active controls:
+
+- **Branch protection** on `main`: linear history required, force-push and deletion blocked, status check (`typecheck + lint + test + build`) required for PR merges, branches must be up to date before merging.
+- **CodeQL** weekly + on every push/PR, `security-and-quality` query suite.
+- **Dependency review** on PRs (fails on `high` severity).
+- **Dependabot** version updates for `npm` and `github-actions` weekly; **Dependabot security updates** auto-open patches for vulnerable deps.
+- **Secret scanning** + push protection (GitHub default for public repos).
+- **All third-party Actions pinned to commit SHA** with version comment.
+- **Workflow `permissions:` defaults to `contents: read`**; jobs grant only what they need.
+- **`automated-security-fixes`, `vulnerability-alerts`, `delete_branch_on_merge`** all enabled.
+
+Intentional gaps for this project (single-maintainer, public, no enterprise org):
+
+- PR-required + code-owner-review + dismiss-stale-reviews are **not** enforced — would block solo direct-pushes; the maintainer reviews their own work before push and uses signed CI as the safety net.
+- Required commit signing is **not** enforced — would force GPG/SSH key setup for every contributor with no proportional benefit at this scale.
+
+If the project gains additional maintainers, all three should be enabled.
