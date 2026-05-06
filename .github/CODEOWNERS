@@ -1,0 +1,13 @@
+# Code owners for codex-translator-chrome-extension.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything not matched below.
+*           @nu0ma
+
+# Security-sensitive areas — explicit ownership so no review slips through.
+/src/background/        @nu0ma
+/tools/                 @nu0ma
+/.github/               @nu0ma
+/SECURITY.md            @nu0ma
+/package.json           @nu0ma
+/pnpm-lock.yaml         @nu0ma

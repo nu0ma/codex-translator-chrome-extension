@@ -1,0 +1,40 @@
+version: 2
+updates:
+  # npm — pnpm uses the npm ecosystem in Dependabot.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    versioning-strategy: "increase"
+    groups:
+      eslint:
+        patterns:
+          - "eslint"
+          - "@eslint/*"
+          - "eslint-*"
+          - "@typescript-eslint/*"
+          - "typescript-eslint"
+      types:
+        patterns:
+          - "@types/*"
+      dev-tooling:
+        patterns:
+          - "prettier"
+          - "vitest"
+          - "esbuild"
+          - "typescript"
+    labels:
+      - "dependencies"
+
+  # GitHub Actions — keep workflow action versions / SHAs current.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
