@@ -4,10 +4,7 @@ Translate selected text on any web page using a local [`codex app-server`](https
 
 ## Demo
 
-![demo](docs/demo.png)
-
-
-
+![demo](docs/demo-v2.png)
 
 ## Setup
 
