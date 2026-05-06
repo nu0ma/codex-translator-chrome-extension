@@ -3,6 +3,7 @@ import { log } from "../shared/logger.js";
 import type { PortRequest, PortResponse, RuntimeMessage } from "../shared/messages.js";
 import { captureSelection, type SelectionInfo } from "./selection.js";
 import {
+  isCardOpen,
   isOurElement,
   removeButton,
   removeCard,
@@ -70,10 +71,15 @@ function startTranslation(text: string, rect: DOMRect | null): void {
   const requestId = newRequestId();
   activeRequestId = requestId;
 
-  card.onCancel(() => {
+  const cancelInFlight = (): void => {
     if (activeRequestId !== requestId || !port) return;
     const cancel: PortRequest = { type: "cancel", requestId };
     port.postMessage(cancel);
+  };
+  card.onCancel(cancelInFlight);
+  card.onClose(() => {
+    cancelInFlight();
+    if (activeCard === card) activeCard = null;
   });
 
   try {
@@ -87,7 +93,14 @@ function startTranslation(text: string, rect: DOMRect | null): void {
   }
 }
 
-document.addEventListener("mouseup", () => {
+document.addEventListener("mouseup", (e) => {
+  // Don't react to clicks on our own UI — otherwise the click event that
+  // triggered translation also bubbles here and re-shows the button on top
+  // of the card.
+  if (isOurElement(e.target)) return;
+  // While a card is open, suppress the floating button. The user can dismiss
+  // the card (× or Esc) before starting a new translation.
+  if (isCardOpen()) return;
   // Defer so the browser finalizes the selection.
   setTimeout(() => {
     const info = captureSelection();

@@ -15,6 +15,7 @@ export interface CardController {
   setCancelled(): void;
   close(): void;
   onCancel(handler: () => void): void;
+  onClose(handler: () => void): void;
 }
 
 export function showButton(rect: DOMRect, onClick: () => void): void {
@@ -83,7 +84,11 @@ export function showCard(rect: DOMRect | null): CardController {
   closeBtn.className = "codex-tr-card-close";
   closeBtn.textContent = "×";
   closeBtn.title = "Close";
-  closeBtn.addEventListener("click", () => removeCard());
+  let closeHandler: (() => void) | null = null;
+  closeBtn.addEventListener("click", () => {
+    closeHandler?.();
+    removeCard();
+  });
 
   header.appendChild(title);
   header.appendChild(cancelBtn);
@@ -143,11 +148,18 @@ export function showCard(rect: DOMRect | null): CardController {
     onCancel(handler) {
       cancelHandler = handler;
     },
+    onClose(handler) {
+      closeHandler = handler;
+    },
   };
 }
 
 export function removeCard(): void {
   document.getElementById(CARD_ID)?.remove();
+}
+
+export function isCardOpen(): boolean {
+  return document.getElementById(CARD_ID) !== null;
 }
 
 export function isOurElement(node: EventTarget | null): boolean {

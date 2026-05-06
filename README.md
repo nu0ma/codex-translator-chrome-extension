@@ -4,8 +4,9 @@ Translate selected text on any web page using a [`codex app-server`](https://dev
 
 - TypeScript (strict), Manifest V3
 - Streaming translation: chunks render as they arrive
-- Cancellable per-request; supersedes the previous in-flight on a new selection
+- Cancellable per-request; closes pending stream when the card is dismissed
 - Tested protocol client (Vitest + fake WebSocket)
+- Verified end-to-end against the real codex CLI in headed Chrome
 - Build with esbuild → `dist/` (loadable as unpacked, or zipped for the Web Store)
 
 ## Project layout
@@ -34,6 +35,8 @@ src/
 scripts/
   build.mjs            esbuild bundler + static copy
   package.mjs          zip dist/ for distribution
+tools/
+  codex-proxy.mjs      WebSocket proxy: spawns codex, strips Origin header
 tests/
   codex-client.test.ts
 ```
@@ -56,13 +59,20 @@ pnpm package         # zip dist/ into codex-translator-<version>.zip
 
 ## Use
 
-1. Start the server:
+1. Start the local proxy + codex (one command):
 
    ```bash
-   codex app-server --listen ws://127.0.0.1:4500
+   pnpm serve
    ```
 
-   Sanity-check: `curl http://127.0.0.1:4500/healthz`
+   This spawns `codex app-server --listen ws://127.0.0.1:4501` as a child process and proxies `ws://127.0.0.1:4500` → upstream while stripping the `Origin` header. **Why a proxy?** codex-app-server rejects WebSocket upgrades that carry an `Origin` header, and Chrome always attaches one to extension-initiated WebSockets. Chrome's `declarativeNetRequest` cannot remove `Origin` on extension-originated WS upgrades (verified empirically), so we route through a tiny Node-side proxy that uses Node's built-in `WebSocket` client (which doesn't send `Origin`).
+
+   Override ports / behavior if needed:
+
+   ```bash
+   pnpm serve -- --port=4500 --upstream-port=4501
+   pnpm serve -- --no-spawn          # codex is already running elsewhere
+   ```
 
 2. Load the extension:
    1. Open `chrome://extensions`
@@ -83,13 +93,13 @@ pnpm package         # zip dist/ into codex-translator-<version>.zip
 ## Architecture
 
 ```
-content script ──port──▶ background SW ──WebSocket──▶ codex-app-server (localhost)
-      ▲                     │                            │
-      │                     │  CodexClient (typed        │
-      │                     │  JSON-RPC + streaming)     │
-      └─── delta/done ──────┘                            │
-                                                          ▼
-                                                   thread/turn lifecycle
+content script ──port──▶ background SW ──WebSocket──▶ codex-proxy (Node) ──WS──▶ codex-app-server
+      ▲                     │                            │                          │
+      │                     │  CodexClient               │  strips Origin           │
+      │                     │  (typed JSON-RPC,          │  header                  │
+      └─── delta/done ──────┘   streaming, AbortSignal)  │                          ▼
+                                                          ▼                   thread/turn lifecycle
+                                                   ws://127.0.0.1:4500   ws://127.0.0.1:4501
 ```
 
 - The content script opens a long-lived `chrome.runtime.Port` for streaming.
