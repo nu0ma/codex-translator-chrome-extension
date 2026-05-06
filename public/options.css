@@ -1,0 +1,129 @@
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+  margin: 16px;
+  min-width: 380px;
+  color: #1f2328;
+  background: #ffffff;
+}
+
+h1 {
+  font-size: 16px;
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #57606a;
+  margin: 0 0 16px;
+}
+
+label {
+  display: block;
+  font-size: 12px;
+  color: #57606a;
+  margin-top: 12px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+input[type="text"],
+input[type="number"] {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 13px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 6px;
+  box-sizing: border-box;
+  background: #ffffff;
+  color: #1f2328;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+  align-items: center;
+}
+
+button {
+  appearance: none;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button.primary {
+  background: #1f6feb;
+  color: #ffffff;
+  border-color: #1f6feb;
+}
+
+button.primary:hover {
+  background: #1158c7;
+}
+
+button.secondary {
+  background: #f6f8fa;
+  color: #1f2328;
+}
+
+.status {
+  font-size: 12px;
+  color: #57606a;
+  min-height: 16px;
+}
+
+.status[data-kind="error"] {
+  color: #b42318;
+}
+
+.hint {
+  font-size: 11px;
+  color: #57606a;
+  margin: 4px 0 0;
+}
+
+code {
+  background: #f6f8fa;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #1f2328;
+    color: #f0f6fc;
+  }
+  input[type="text"],
+  input[type="number"] {
+    background: #2d333b;
+    color: #f0f6fc;
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+  button.secondary {
+    background: #2d333b;
+    color: #f0f6fc;
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+  .subtitle,
+  .hint,
+  label,
+  .status {
+    color: #adbac7;
+  }
+  code {
+    background: #2d333b;
+  }
+  .status[data-kind="error"] {
+    color: #ff8182;
+  }
+}

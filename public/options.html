@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Codex Translator — Settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <h1>Codex Translator</h1>
+    <p class="subtitle">
+      Local-only translator powered by
+      <code>codex app-server</code>.
+    </p>
+
+    <label for="wsUrl">WebSocket URL</label>
+    <input id="wsUrl" type="text" placeholder="ws://127.0.0.1:4500" autocomplete="off" />
+    <p class="hint">
+      Start the server first:
+      <code>codex app-server --listen ws://127.0.0.1:4500</code>
+    </p>
+
+    <label for="model">Model</label>
+    <input
+      id="model"
+      type="text"
+      placeholder="(leave empty for codex default)"
+      autocomplete="off"
+    />
+    <p class="hint">Passed to <code>thread/start</code>. Leave empty to let codex pick.</p>
+
+    <label for="targetLang">Target language</label>
+    <input id="targetLang" type="text" placeholder="Japanese" autocomplete="off" />
+    <p class="hint">Examples: Japanese, English, Korean, French.</p>
+
+    <label for="timeoutMs">Timeout (ms)</label>
+    <input id="timeoutMs" type="number" min="5000" max="600000" step="1000" />
+
+    <div class="row">
+      <button id="save" type="button" class="primary">Save</button>
+      <button id="reset" type="button" class="secondary">Reset</button>
+      <span id="status" class="status"></span>
+    </div>
+
+    <script src="options.js" type="module"></script>
+  </body>
+</html>
