@@ -5,9 +5,9 @@
  *
  * Output: codex-translator-<version>.zip in the repo root.
  */
-import { createWriteStream, existsSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { dirname, join, resolve, relative } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 
@@ -23,8 +23,12 @@ if (!existsSync(DIST)) {
 const pkg = JSON.parse(await readFile(join(ROOT, "package.json"), "utf8"));
 const out = join(ROOT, `codex-translator-${pkg.version}.zip`);
 
-// Use the system `zip` for a deterministic, well-supported archive.
-const result = spawnSync("zip", ["-r", "-9", relative(ROOT, out), "."], {
+// Remove any stale archive (zip otherwise appends to it).
+if (existsSync(out)) rmSync(out);
+
+// Use the system `zip` for a deterministic, well-supported archive. Pass an
+// absolute output path so it lands at the repo root regardless of cwd.
+const result = spawnSync("zip", ["-r", "-9", out, "."], {
   cwd: DIST,
   stdio: "inherit",
 });
