@@ -2,7 +2,6 @@
 
 Translate selected text on any web page using a local [`codex app-server`](https://developers.openai.com/codex/app-server). No API key needed if you `codex login`-ed; nothing leaves `127.0.0.1`.
 
-![demo](docs/demo.png)
 
 ## Setup
 
