@@ -1,7 +1,7 @@
 export const CLIENT_INFO = {
   name: "codex-translator-extension",
   title: "Codex Translator",
-  version: "0.1.0",
+  version: "0.1.1",
 } as const;
 
 export const DEFAULT_SETTINGS = {
